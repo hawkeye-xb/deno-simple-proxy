@@ -8,38 +8,94 @@
 ### 第二步
 复制下面代码
 ```JS
-const server = Deno.serve(async (request) => {
-  if (request.method === "GET") {
-    return new Response("Hello Deno\n from GET method");
-  }
-  if (request.method === "POST") {
-    try {
-        const body = await request.text();
-        const response = await fetch("https://api.openai.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": "Bearer {{KEY}}"
-            },
-            body,
-        });
-        
-        const responseBody = await response.text();
-        return new Response(responseBody, {
-            status: response.status,
-            headers: response.headers,
-        });
-    } catch (error) {
-        return new Response({ status: 500, body: `Server error: ${error.message}` });
-    }
-  }
+const targetOrigin = "https://api.openai.com";
 
-  return new Response("hello world!\n");
+Deno.serve(async (request) => {
+  // 获取原始请求的 URL 和方法
+  const { method, url, headers } = request;
+  const originalUrl = new URL(url);
+  
+  // 记录日志
+  console.info(`Incoming request: ${method} ${originalUrl.pathname}${originalUrl.search}`);
+
+  // 构建目标 URL
+  const targetUrl = new URL(originalUrl.pathname + originalUrl.search, targetOrigin);
+  
+  try {
+    // 准备转发请求的选项
+    const requestOptions: RequestInit = {
+      method,
+      headers: new Headers(headers), // 复制 headers
+    };
+
+    // 对于 POST、PUT、PATCH 方法，透传请求体
+    if (request.method === "POST" || request.method === "PUT" || request.method === "PATCH") {
+      requestOptions.body = await request.arrayBuffer();
+    }
+
+    console.info(`targetUrl: ${targetUrl}`);
+    // console.debug('requestOptions:', requestOptions); // 里面会有API KEY，可另外处理。
+    // 向目标 API 发起请求
+    const response = await fetch(targetUrl.toString(), requestOptions);
+
+    // 检查是否是 SSE
+    const contentType = response.headers.get("Content-Type");
+    console.info(`${targetUrl} response content type is:`, contentType);
+    if (contentType === "text/event-stream") {
+      // 返回一个新的 ReadableStream，用于将事件流传递给客户端
+      const stream = new ReadableStream({
+        start(controller) {
+          const reader = response.body.getReader();
+          return (function pump() {
+            reader.read().then(({ done, value }) => {
+              if (done) {
+                controller.close();
+                return;
+              }
+              controller.enqueue(value);
+              pump();
+            }).catch(error => {
+              console.error('Error while reading the stream', error);
+              controller.error(error);
+              controller.close();
+            });
+          })();
+        },
+        cancel() {
+          reader.cancel();
+        }
+      });
+
+      // 返回 Response 对象，透传 SSE
+      return new Response(stream, {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "Connection": "keep-alive",
+        },
+      });
+    } else {
+      // 其他类型的响应，直接透传
+      const responseBody = await response.arrayBuffer();
+      return new Response(responseBody, {
+        status: response.status,
+        headers: response.headers,
+      });
+    }
+  } catch (error) {
+    console.error(`Error proxying request to ${targetUrl}:`, error);
+    return new Response(`Server error: ${error.message}`, { status: 500 });
+  }
 }, { port: 8000 });
+
+console.log(`Proxy server running at http://localhost:8000/`);
 ```
 
 ### 第三步
-[https://platform.openai.com/api-keys](https://platform.openai.com/api-keys) 从里面来个OpenAI 的API key，填到代码上面。或者不填，请求这个接口时候带上。
+[https://platform.openai.com/api-keys](https://platform.openai.com/api-keys) 从里面来个OpenAI 的API key~~，填到代码上面。或者不填，请求这个接口时候带上。~~，发请求时候带上。
+
+#### 自定义对话客户端
+可以去下载[chatBox](https://chatboxai.app/zh)，将当前服务的域名设置在API域名既可。
 
 ### 第四步
 Save & Deploy
@@ -49,6 +105,7 @@ Save & Deploy
 ```shell
 curl --location --request POST 'https://{{YOUR_PROJECT}}.deno.dev' \
 --header 'Content-Type: application/json' \
+--header 'Authorization: Bearer {{YOUR_API_KEY}}' \
 --data-raw '{
     "model": "gpt-3.5-turbo",
     "messages": [
@@ -64,5 +121,4 @@ curl --location --request POST 'https://{{YOUR_PROJECT}}.deno.dev' \
   }'
 ```
 ## 最后
-当然，里面代码只是提供一些思路，仅供参考。Deno牛逼🐶。
-省得自建云服务，还需要另外的节点倒一手才能请求了。
+当然，里面代码只是提供一些思路，仅供参考。Deno牛逼🐶。    
