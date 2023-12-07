@@ -92,7 +92,7 @@ console.log(`Proxy server running at http://localhost:8000/`);
 ```
 
 ### 第三步
-[https://platform.openai.com/api-keys](https://platform.openai.com/api-keys) 从里面来个OpenAI 的API key~~，填到代码上面。或者不填，请求这个接口时候带上。~~，发请求时候带上。
+[https://platform.openai.com/api-keys](https://platform.openai.com/api-keys) 从里面来个OpenAI 的API key，发请求时候带上。
 
 #### 自定义对话客户端
 可以去下载[chatBox](https://chatboxai.app/zh)，将当前服务的域名设置在API域名既可。
