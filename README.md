@@ -93,7 +93,7 @@ console.log(`Proxy server running at http://localhost:8000/`);
 
 ### 第三步
 [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys) 从里面来个OpenAI 的API key，发请求时候带上。
-没Key的可以 [https://bewildcard.com/i/HB0O8Q0Y](https://bewildcard.com/i/HB0O8Q0Y) 从里面注册，有提供限时虚拟机的梯子，充值可以直接使用支付宝，省事儿；不过手续费不便宜。
+没Key的可以 [https://bewildcard.com/i/HB0O8Q0Y](https://bewildcard.com/i/HB0O8Q0Y) 从里面注册，按照教程生成，有提供限时虚拟机的梯子，充值可以直接使用支付宝，省事儿；不过手续费不便宜。
 
 #### 客户端
 可以去下载[chatBox](https://chatboxai.app/zh)，将当前服务的域名设置在API域名既可。
