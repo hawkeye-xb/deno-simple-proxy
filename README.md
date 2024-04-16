@@ -1,4 +1,4 @@
-## 一分钟将代理OpenAI 的API，无需搬梯子
+## 一分钟将代理OpenAI 的API
 作为前端开发，一直听说Deno的大名，但遗憾的是至今还没有亲自尝试过编写一个简单的"Hello World"程序。现在，我打算利用Deno来实现一个简单的API代理服务，这旨在用于技术交流和学习，才不是因
 为我发现了可以通过[Deno Deploy](https://deno.com/deploy/pricing)的免费套餐来代理访问OpenAI的接口。这是一个探索和学习的过程，希望我们可以一起讨论和优化🐶。
 
